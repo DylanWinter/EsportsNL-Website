@@ -1,0 +1,12 @@
+# IDE stuff
+.idea 
+.vs
+.vscode
+
+# Env
+.env
+*__pycache__
+*.sqlite
+
+# Testing
+testslugs.txt

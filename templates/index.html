@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Esports NL</title>
+  <link rel="icon" href="icons/esportsnllogo.png" type="image/icon type">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta name="description" content="Esports NL is a community for players in Newfoundland & Labrador to compete, learn, and connect through esports." />
+</head>
+<body>
+  <!-- Header / Navigation -->
+  <header>
+    <div class="container nav">
+      <a href="#top" class="brand" aria-label="Esports NL home">
+        <div class="logo" aria-hidden="true">
+	  <img src="{{ url_for('static', filename='icons/esportsnllogo.png') }}" alt="ESNL Logo">
+	</div>
+        <span>Esports NL</span>
+      </a>
+
+      <input id="nav-toggle" type="checkbox" aria-label="Toggle navigation" />
+      <label for="nav-toggle" class="hamburger" aria-hidden="true">
+        <span class="bar"></span>
+      </label>
+
+      <nav class="links" aria-label="Primary">
+        <a href="home#about">About</a>
+        <a href="/events">Past Events</a>
+        <a class="cta" href="https://discord.com/invite/XUeDfkvFgf" aria-label="Join our Discord">Join our Discord <span aria-hidden>→</span></a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container hero-inner">
+      <div>
+        <div class="eyebrow">Esports NL</div>
+        <h1>The home of esports on the Rock.</h1>
+        <div class="grid" style="grid-template-columns: auto auto; gap: 24px; align-items:center">
+          <div class="grid" style="grid-template-columns: auto; gap: 24px; align-items:center; justify-content: start;">
+            <div class="social-bar">
+              <a href="https://discord.gg/XUeDfkvFgf" target="_blank" aria-label="Discord">
+                <img src="{{ url_for('static', filename='icons/discord.svg') }}" alt="Discord">
+              </a>
+              <a href="https://www.youtube.com/@EsportsNL" target="_blank" aria-label="YouTube">
+                <img src="{{ url_for('static', filename='icons/youtube.svg') }}" alt="YouTube">
+              </a>
+              <a href="https://www.twitch.tv/esportsnl" target="_blank" aria-label="Twitch">
+                <img src="{{ url_for('static', filename='icons/twitch.svg') }}" alt="Twitch">
+              </a>
+              <a href="https://instagram.com" target="_blank" aria-label="Instagram">
+                <img src="{{ url_for('static', filename='icons/instagram.svg') }}" alt="Instagram">
+              </a>
+              <a href="https://www.start.gg/hub/esports-nl" target="_blank" aria-label="Start.gg">
+                <img src="{{ url_for('static', filename='icons/startgg.svg') }}" alt="Start.gg" style="height: 56px">
+              </a>
+            </div>
+        </div>
+      </div>
+    </div>
+    </div>
+  </section>
+
+  <!-- About -->
+  <section id="about">
+    <div class="container">
+      <div class="grid cards">
+        <article class="card">
+          <h3>What is Esports NL?</h3>
+          <p>We’re a grassroots esports community serving Newfoundland & Labrador.</p>
+        </article>
+        <article class="card">
+          <h3>All skill levels welcome</h3>
+          <p>From first-time competitors to seasoned champs — our tiered formats and community nights make it easy to jump in.</p>
+        </article>
+        <article class="card">
+          <h3>Safe, inclusive, local</h3>
+          <p>We follow a clear code of conduct and partner with local venues and schools to grow esports the right way.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Upcoming Events -->
+  <section id="events">
+    <div class="container">
+      <h2>Upcoming Events</h2>
+      {% if events %}
+        <ul class="event-list">
+          {% for event in events %}
+            <li class="event-item">
+              <h3>{{ event.title }}</h3>
+              <p>
+                <strong>Date:</strong> {{ event.date }}<br>
+                <strong>Location:</strong> {{ event.location or "TBA" }}
+              </p>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p>No upcoming events at the moment. Check back soon!</p>
+      {% endif %}
+    </div>
+  </section>
+
+    <!-- FAQ Section -->
+  <section id="faq">
+    <div class="container">
+      <h2>Frequently Asked Questions</h2>
+      <div class="faq-list">
+        <div class="faq-item">
+          <h3>What games are played?</h3>
+          <p>So far, we have held events in Counter-Strike and Rocket League. However, we are open to all games.</p>
+        </div>
+        <div class="faq-item">
+          <h3>Can I host a tournament?</h3>
+          <p>Esports NL is designed as a 'central hub' for players to organize their own events. If you want to have
+          a tournament for a game that isn't currently being played, reach out to us!</p>
+        </div>
+        <div class="faq-item">
+          <h3>Are events in person or online?</h3>
+          <p>Both! We have held both online tournaments and local LAN events. </p>
+        </div>
+        <div class="faq-item">
+          <h3>Is there prize money?</h3>
+          <p> Depends on the event. Most of our tournaments are for bragging rights only, but we have held tournaments with prize
+          pools of up to $500 CAD. </p>
+        </div>
+        <div class="faq-item">
+          <h3>Is it free to participate?</h3>
+          <p> Again, this depends on the event. However, nearly all are completely free to enter. </p>
+        </div>
+        <div class="faq-item">
+          <h3>I live outside NL. Can I still participate? </h3>
+          <p> Yes! Our rule for online tournaments is that at least half of your roster must be NL-based. This means that for a team of 5,
+          at least 3 players must be local. </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <footer>
+    <div class="container foot">
+      <div>© <span id="year"></span> Esports NL • Built in Newfoundland & Labrador</div>
+      <div class="social" aria-label="Social links" style="display: flex; gap: 20px; align-items: center;">
+        <a href="https://discord.com/invite/XUeDfkvFgf" target="_blank" aria-label="Discord">
+          <img src="{{ url_for('static', filename='icons/discord.svg') }}" alt="Discord" style="height:24px; width:auto;">
+        </a>
+        <a href="https://www.youtube.com/@EsportsNL" target="_blank" aria-label="YouTube">
+          <img src="{{ url_for('static', filename='icons/youtube.svg') }}" alt="YouTube" style="height:24px; width:auto;">
+        </a>
+        <a href="https://www.twitch.tv/esportsnl" target="_blank" aria-label="Twitch">
+          <img src="{{ url_for('static', filename='icons/twitch.svg') }}" alt="Twitch" style="height:24px; width:auto;">
+        </a>
+        <a href="https://instagram.com" target="_blank" aria-label="Instagram">
+          <img src="{{ url_for('static', filename='icons/instagram.svg') }}" alt="Instagram" style="height:24px; width:auto;">
+        </a>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>
