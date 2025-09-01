@@ -7,6 +7,8 @@ import os
 
 from db.db import Database
 
+from src.utils import build_date_string
+
 load_dotenv()
 discord_token = os.getenv("DISCORD_TOKEN")
 GUILD_ID = 1333167946607886449
@@ -62,7 +64,28 @@ def index():
 @app.route("/past_events")
 def past_events():
     events = db.get_all_events()
-    return render_template("events.html", events = events)
+
+    for event in events:
+        event["date_string"] = build_date_string(event["start_date"], event["start_date"])
+
+    # Sort reverse chronologically by start date
+    events.sort(
+        key=lambda e: datetime.fromisoformat(e["start_date"]),
+        reverse=True,
+    )
+
+    return render_template("events.html", events=events)
+
+
+@app.route("/event/<int:event_id>")
+def event(event_id):
+    event_info = db.get_detailed_event_info(event_id)
+
+    if not event_info:
+        return "Event not found", 404
+
+    event_info["date_string"] = build_date_string(event_info["start_date"], event_info["start_date"])
+    return render_template("event.html", event=event_info)
 
 if __name__ == "__main__":
     app.run()

@@ -314,6 +314,55 @@ class Database:
             "total_matches": row[2]
         } if row else None
 
+    def get_detailed_event_info(self, event_id: int):
+        cur = self.get_conn().cursor()
+        cur.execute("""
+            SELECT
+                e.id AS event_id,
+                e.name AS event_name,
+                e.start_date,
+                e.end_date,
+                e.game,
+                e.startgg_slug,
+                e.location,
+                ee.id AS team_id,
+                ee.name AS team_name,
+                ee.placement AS team_placement,
+                GROUP_CONCAT(p.tag, ', ') AS roster
+            FROM Event e
+            LEFT JOIN EventEntrant ee ON ee.tournament_id = e.id
+            LEFT JOIN PlayerEntrant pe ON pe.entrant_id = ee.id
+            LEFT JOIN Player p ON p.id = pe.player_id
+            WHERE e.id = ?
+            GROUP BY ee.id
+            ORDER BY ee.placement ASC
+        """, (event_id,))
+
+        rows = cur.fetchall()
+
+        if not rows:
+            return None
+
+        # Build the nested structure
+        event_info = {
+            "event_id": rows[0]["event_id"],
+            "name": rows[0]["event_name"],
+            "start_date": rows[0]["start_date"],
+            "end_date": rows[0]["end_date"],
+            "game": rows[0]["game"],
+            "location": rows[0]["location"],
+            "teams": []
+        }
+
+        for row in rows:
+            event_info["teams"].append({
+                "team_id": row["team_id"],
+                "team_name": row["team_name"],
+                "placement": row["team_placement"],
+                "roster": row["roster"].split(", ") if row["roster"] else []
+            })
+
+        return event_info
 
 
 

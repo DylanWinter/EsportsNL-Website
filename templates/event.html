@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Esports NL - Events</title>
-  <link rel="icon" href="static/icons/esportsnllogo.png" type="image/icon type">
+  <title>Esports NL - {{ event.name }}</title>
+  <link rel="icon" href="{{ url_for('static', filename='static/icons/esportsnllogo.png') }}" type="image/icon type">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <meta name="description" content="List of upcoming events from Esports NL, the Newfoundland & Labrador esports community." />
+  <meta name="description" content="Details and results for {{ event.name }} hosted by Esports NL." />
 </head>
 <body>
   <!-- Header / Navigation -->
@@ -25,45 +25,48 @@
       </label>
 
       <nav class="links" aria-label="Primary">
-        <a href="home">About</a>
+        <a href="/home">About</a>
         <a href="/events">Past Events</a>
         <a class="cta" href="https://discord.com/invite/XUeDfkvFgf" aria-label="Join our Discord">Join our Discord <span aria-hidden>→</span></a>
       </nav>
     </div>
   </header>
 
-  <!-- Events List -->
-  <main>
-    <section id="events">
-      <div class="container">
-        <h1>Past Events</h1>
-        {% if events %}
-          <ul class="event-list">
-            {% for event in events %}
-              <div class="team-entry">
-                <div class="team-header">
-                  <h3>
-                  <a class="event-link" href="{{ url_for('event', event_id=event.id) }}">
-                    {{ event.name }}
-                  </a>
-                </h3>
-                </div>
-                  <div class="team-roster">
-                    <p>
-                      {{ event.date_string }}<br>
-                      {{ event.location }}<br>
-                      {{ event.game }}
-                    </p>
-                  </div>
+<!-- Event Details -->
+<section id="event-overview">
+  <div class="container">
+      <a class="event-link" href="{{ url_for('past_events') }}">← Return to event list</a>
+
+    <h1>{{ event.name }}</h1>
+    <p class="event-meta">
+      <strong>Date:</strong> {{ event.date_string }} <br>
+      <strong>Location:</strong> {{ event.location }} <br>
+      <strong>Game:</strong> {{ event.game }}
+    </p>
+
+    <h2>Standings</h2>
+    {% if event.teams %}
+      <div class="standings-list">
+        {% for team in event.teams %}
+          <div class="team-entry">
+            <div class="team-header">
+              <strong>{% if team.placement %}{{ team.placement }}{% endif %}</strong> | {{ team.team_name }}
+            </div>
+            {% if team.roster %}
+              <div class="team-roster">
+                {{ team.roster | join(', ') }}
               </div>
-            {% endfor %}
-          </ul>
-        {% else %}
-          <p>Failed to find past events.</p>
-        {% endif %}
+            {% else %}
+              <div class="team-roster">No roster available.</div>
+            {% endif %}
+          </div>
+        {% endfor %}
       </div>
-    </section>
-  </main>
+    {% else %}
+      <p>Standings are not available.</p>
+    {% endif %}
+  </div>
+</section>
 
   <!-- Footer -->
   <footer>
@@ -85,5 +88,6 @@
       </div>
     </div>
   </footer>
+
 </body>
 </html>
