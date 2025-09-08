@@ -9,7 +9,8 @@ from db.db import Database
 
 from src.utils import build_date_string
 
-load_dotenv()
+if os.path.exists(".env"):
+    load_dotenv()
 discord_token = os.getenv("DISCORD_TOKEN")
 GUILD_ID = 1333167946607886449
 
@@ -88,4 +89,4 @@ def event(event_id):
     return render_template("event.html", event=event_info)
 
 if __name__ == "__main__":
-    app.run()
+    app.run(host="0.0.0.0")

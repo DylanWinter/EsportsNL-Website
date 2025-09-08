@@ -1,0 +1,21 @@
+services:
+  web:
+    build: .
+    container_name: EsportsNL-web
+    env_file: .env
+    ports:
+      - "5000:5000"
+    volumes:
+      - db:/db
+    restart: unless-stopped
+    command: python main.py
+
+  bot:
+    build: .
+    container_name: EsportsNL-bot
+    env_file: .env
+    restart: unless-stopped
+    command: python bot.py
+
+volumes:
+  db:

@@ -11,7 +11,8 @@ from src.utils import display_list, parse_users, get_veto_for_channel
 
 from db.db import Database
 
-load_dotenv()
+if os.path.exists(".env"):
+    load_dotenv()
 discord_token = os.getenv("DISCORD_TOKEN")
 startgg_token = os.getenv("STARTGG_TOKEN")
 environment = os.getenv("ENV", "DEV")
@@ -74,14 +75,14 @@ async def on_app_command_error(interaction: discord.Interaction, error):
 
 @bot.tree.command(name="maplist", description="Lists the current map pool")
 async def list_map_pool(interaction: discord.Interaction):
-    with open("bot_config.json", "r") as f:
+    with open("cfg/bot_config.json", "r") as f:
         data = json.load(f)
     await interaction.response.send_message("**Current map pool:** " + display_list(data["maps"]))
 
 @bot.tree.command(name="mapreplace", description="Replace a map in the pool")
 @app_commands.checks.has_any_role("Admin", "Tournament Organizer")
 async def replace_map(interaction: discord.Interaction, map_to_replace:str, new_map:str):
-    with open("bot_config.json", "r") as f:
+    with open("cfg/bot_config.json", "r") as f:
         data = json.load(f)
     maps = data.get("maps", [])
     # Case-insensitive check
@@ -93,7 +94,7 @@ async def replace_map(interaction: discord.Interaction, map_to_replace:str, new_
     old_map = maps[index]
     maps[index] = new_map
     data["maps"] = maps
-    with open("bot_config.json", "w") as f:
+    with open("cfg/bot_config.json", "w") as f:
         json.dump(data, f, indent=4)
 
     await interaction.response.send_message(
@@ -105,7 +106,7 @@ async def replace_map(interaction: discord.Interaction, map_to_replace:str, new_
 async def start_veto(interaction: discord.Interaction, team1: str, team2: str, num_maps: int = 1):
     if num_maps != 1 and num_maps != 3 and num_maps != 5:
         await interaction.response.send_message("Invalid veto. Supply 1, 3 or 5 maps.", ephemeral=True)
-    with open("bot_config.json", "r") as f:
+    with open("cfg/bot_config.json", "r") as f:
         data = json.load(f)
     maps = data["maps"]
     veto = get_veto_for_channel(bot.active_vetoes, interaction.channel.id)
