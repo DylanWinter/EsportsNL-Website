@@ -7,6 +7,3 @@
 .env
 *__pycache__
 *.sqlite
-
-# Testing
-testslugs.txt

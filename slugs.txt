@@ -1,0 +1,10 @@
+# A list of all slugs that can be used to rebuild the database if needed.
+esports-nl-cs2-wingman-cup-february-2025
+esports-nl-cs2-wingman-cup-march-2025
+esports-nl-cs2-wingman-cup-april-2025
+esports-nl-cs2-wingman-cup-may-2025
+esports-nl-rocket-league-doubles-cup-may-2025
+esports-nl-rocket-league-classic-june-2025
+esports-nl-cs2-wingman-cup-july-2025
+esports-nl-cs2-wingman-cup-august-2025
+esports-nl-cs2-summer-online-open-2025

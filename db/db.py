@@ -1,10 +1,13 @@
 import sqlite3
 import os
+from dotenv import load_dotenv
+
 
 class Database:
     def __init__(self):
         # establish connection
-        self.db_path = os.path.join(os.path.dirname(__file__), "EsportsNL.sqlite")
+        load_dotenv()
+        self.db_path = os.path.join(os.getcwd(), os.getenv("DB_PATH"))
 
     def get_conn(self):
         conn = sqlite3.connect(self.db_path)
@@ -33,6 +36,7 @@ class Database:
             conn.execute("DELETE FROM sqlite_sequence WHERE name='EventEntrant'")
             conn.execute("DELETE FROM sqlite_sequence WHERE name='Match'")
 
+            conn.commit()
         print("All event-related data cleared and AUTOINCREMENT counters reset.")
 
     def write_event_data(self, events: list[dict]):

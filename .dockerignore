@@ -8,7 +8,8 @@ __pycache__/
 .git
 .dockerignore
 .gitignore
-testslugs.txt
+slugs.txt
+db/data/
 .idea
 .vs
 .vscode

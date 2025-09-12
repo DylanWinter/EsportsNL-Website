@@ -1,5 +1,6 @@
 import requests
 import os
+import sys
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
@@ -81,6 +82,9 @@ def get_data_from_tournament(token: str, slug: str):
               }
               }
     )
+
+    if response.status_code != 200:
+        response.raise_for_status()
 
     events = []
 
@@ -167,18 +171,47 @@ def get_data_from_tournament(token: str, slug: str):
     return events
 
 if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Usage: python startgg.py <tournament_slug> or python startgg.py --reset to rebuild from slugs.txt")
+        sys.exit(1)
+
     load_dotenv()
     startgg_token = os.getenv("STARTGG_TOKEN")
-
     db = Database()
-    db.clear_all_event_data()
 
-    with open("testslugs.txt") as f:
-        line = f.readline().strip()
-        while line != "":
-            print("Querying tournament: ", line.strip())
-
-            event = get_data_from_tournament(startgg_token, line.strip())
-            db.write_event_data(event)
-
+    if sys.argv[1] == "--reset":
+        db.clear_all_event_data()
+        with open("slugs.txt", "r", encoding="utf-8") as f:
             line = f.readline()
+            while line != "":
+                line = line.strip()
+                if line.startswith("#"):
+                    line = f.readline()
+                    continue
+
+                print("Querying tournament data from API:", line)
+                try:
+                    event = get_data_from_tournament(startgg_token, line)
+                except Exception as e:
+                    print("Error while getting data from API: ", e)
+
+                try:
+                    db.write_event_data(event)
+                except Exception as e:
+                    print("Error while writing to database:", e)
+
+                line = f.readline()
+
+    else:
+        slug = sys.argv[1]
+
+        print("Querying tournament data from API:", slug)
+        try:
+            event = get_data_from_tournament(startgg_token, slug)
+        except Exception as e:
+            print("Error while getting data from API: ", e, e.with_traceback())
+
+        try:
+            db.write_event_data(event)
+        except Exception as e:
+            print("Error while writing to database:", e)
