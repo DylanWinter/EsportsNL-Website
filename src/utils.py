@@ -36,7 +36,9 @@ def format_date(dt: datetime, include_year=True):
         day_fmt = "%#d"  # Windows
         return dt.strftime(f"%B {day_fmt}, %Y" if include_year else f"%B {day_fmt}")
 
-def build_date_string(start_time: str, end_time: str):
+def build_date_string(start_time: str, end_time: str = None):
+    if not end_time:
+        end_time = start_time
     nst = ZoneInfo("America/St_Johns")  # NST timezone
     start = datetime.fromisoformat(start_time).astimezone(nst)
     end = datetime.fromisoformat(end_time).astimezone(nst)
@@ -54,3 +56,13 @@ def build_date_string(start_time: str, end_time: str):
             start_str = format_date(start, include_year=False)
             end_str = format_date(end)
             return f"{start_str} - {end_str}"
+
+def ordinal(n: int) -> str:
+    """
+    Convert an integer to its ordinal representation.
+    """
+    if 10 <= n % 100 <= 20:
+        suffix = "th"
+    else:
+        suffix = {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
+    return f"{n}{suffix}"

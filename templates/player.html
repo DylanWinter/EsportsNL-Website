@@ -3,44 +3,50 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Esports NL - {{ event.name }}</title>
+  <title>Esports NL - {{ player.tag }}</title>
   <link rel="icon" href="{{ url_for('static', filename='static/icons/esportsnllogo.png') }}" type="image/icon type">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <meta name="description" content="Details for {{ event.name }} hosted by Esports NL." />
+  <meta name="description" content="Details for {{ player.tag }} with Esports NL." />
 </head>
 <body>
   {% include 'header.html' %}
 
-<!-- Event Details -->
+<!-- Details -->
 <section id="event-overview">
   <div class="container">
-      <a class="event-link" href="{{ url_for('past_events') }}">← Return to event list</a>
+      <a class="event-link" href="{{ url_for('players') }}">← Return to player list</a>
 
-    <h1>{{ event.name }}</h1>
+    <h1>{{ player.tag }}</h1>
     <p class="event-meta">
-      {% if 'startgg_link' in event %}
+      {% if 'startgg_link' in player %}
       <div class="social-bar">
-        <a href="{{event.startgg_link}}" target="_blank" rel="noopener noreferrer"  aria-label="Start.gg">
+        <a href="{{player.startgg_link}}" target="_blank" rel="noopener noreferrer"  aria-label="Start.gg">
           <img src="{{ url_for('static', filename='icons/startgg.svg') }}" alt="Start.gg" style="height: 56px">
         </a>
       </div>
       <br>
       {% endif %}
-      <strong>Date:</strong> {{ event.date_string }} <br>
-      <strong>Location:</strong> {{ event.location }} <br>
-      <strong>Game:</strong> {{ event.game }}
+      <strong>Discord:</strong> {{ player.discord_name }} <br>
+      <strong>Total Events: </strong> {{ player.tournaments_played }} (won {{player.tournaments_won}}) <br>
+      <strong>Games Played:</strong> {{ player.games_played | join(', ') }} <br>
+      <strong>Matches Played: </strong> {{player.match_wins + player.match_losses}} ({{player.match_wins}}W-{{player.match_losses}}L)
     </p>
 
-    <h2>Standings</h2>
-    {% if event.teams %}
+      <h2>History</h2>
+    {% if player["teams"] %}
       <div class="standings-list">
-        {% for team in event.teams %}
+        {% for team in player["teams"] %}
           <div class="team-entry">
             <div class="team-header">
-              <strong>{% if team.placement %}{{ team.placement }}{% endif %}</strong> | {{ team.name }}
+               <a class="event-link" href="/event/{{team.tournament_id}}">
+                 {{team.event_name}}
+               </a> <br>
+                {{ team.name }}
             </div>
+              {{ team.date_string }} | {{team.game}} <br>
+              {% if team.placement %}{{ team.placement }} of {{ team.total_entrants }}{% endif %}
             {% if team.roster %}
-              <div class="team-roster">
+            <div class="team-roster">
                 <em>
                   {% for player in team.roster %}
                     <a class="event-link" href="{{ url_for('player', player_id=player.id) }}">{{ player.tag }}</a>{% if not loop.last %}, {% endif %}
@@ -56,6 +62,7 @@
     {% else %}
       <p>Standings are not available.</p>
     {% endif %}
+
   </div>
 </section>
 

@@ -7,7 +7,7 @@ import os
 
 from db.db import Database
 
-from src.utils import build_date_string
+from src.utils import build_date_string, ordinal
 
 if os.path.exists(".env"):
     load_dotenv()
@@ -80,13 +80,36 @@ def past_events():
 
 @app.route("/event/<int:event_id>")
 def event(event_id):
-    event_info = db.get_detailed_event_info(event_id)
+    event = db.get_detailed_event_info(event_id)
 
-    if not event_info:
+    if not event:
         return "Event not found", 404
 
-    event_info["date_string"] = build_date_string(event_info["start_date"], event_info["start_date"])
-    return render_template("event.html", event=event_info)
+    event["date_string"] = build_date_string(event["start_date"])
+    if "startgg_slug" in event and event["startgg_slug"] is not None:
+        event["startgg_link"] = "https://start.gg/tournament/" + event["startgg_slug"] + "/details"
+
+    return render_template("event.html", event=event)
+
+@app.route("/players")
+def players():
+    players = db.get_all_players()
+    for player in players:
+        player["first_event_date"] = build_date_string(player["first_event_date"])
+    return render_template("players.html", players=players)
+
+@app.route("/player/<int:player_id>")
+def player(player_id):
+    player = db.get_detailed_player_info(player_id)
+    if "startgg_discriminator" in player and player["startgg_discriminator"] is not None:
+        player["startgg_link"] = "https://start.gg/user/" + player["startgg_discriminator"]
+        print(player["startgg_link"])
+    print(player["startgg_discriminator"])
+    for team in player["teams"]:
+        team["placement"] = ordinal(team["placement"])
+        team["date_string"] = build_date_string(team["start_date"])
+    print(player)
+    return render_template("player.html", player=player)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0")

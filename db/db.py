@@ -179,8 +179,139 @@ class Database:
     def get_all_players(self):
         conn = self.get_conn()
         with conn:
-            res = conn.execute("SELECT * FROM Player")
+            res = conn.execute("""
+                SELECT 
+                    Player.*, 
+                    COUNT(PlayerEntrant.player_id) AS total_events_played,
+                    MIN(Event.start_date) AS first_event_date
+                FROM Player
+                LEFT JOIN PlayerEntrant ON Player.id = PlayerEntrant.player_id
+                LEFT JOIN EventEntrant ON PlayerEntrant.entrant_id = EventEntrant.id
+                LEFT JOIN Event ON EventEntrant.tournament_id = Event.id
+                GROUP BY Player.id
+                ORDER BY total_events_played DESC
+            """)
             return [dict(row) for row in res.fetchall()]
+
+    def get_detailed_player_info(self, player_id: int):
+        cur = self.get_conn().cursor()
+
+        # --- Overall stats + match record + games ---
+        cur.execute("""
+            WITH player_entrants AS (
+                SELECT ee.id AS entrant_id,
+                       ee.tournament_id,
+                       ee.placement,
+                       ee.name AS team_name,
+                       ev.game AS game,
+                       p.tag,
+                       p.discord_name,
+                       p.startgg_discriminator
+                FROM Player p
+                JOIN PlayerEntrant pe ON p.id = pe.player_id
+                JOIN EventEntrant ee ON pe.entrant_id = ee.id
+                JOIN Event ev ON ee.tournament_id = ev.id
+                WHERE p.id = ?
+            ),
+            matches AS (
+                SELECT m.id AS match_id,
+                       m.winner_entrant_id,
+                       mp.entrant_id
+                FROM Match m
+                JOIN MatchParticipant mp ON m.id = mp.match_id
+                WHERE mp.entrant_id IN (SELECT entrant_id FROM player_entrants)
+            )
+            SELECT
+                pe.tag AS tag,
+                pe.discord_name AS discord_name,
+                pe.startgg_discriminator AS startgg_discriminator,
+                COUNT(DISTINCT pe.tournament_id) AS tournaments_played,
+                COUNT(DISTINCT CASE WHEN pe.placement = 1 THEN pe.tournament_id END) AS tournaments_won,
+                SUM(CASE WHEN m.entrant_id = m.winner_entrant_id THEN 1 ELSE 0 END) AS match_wins,
+                SUM(CASE WHEN m.entrant_id != m.winner_entrant_id THEN 1 ELSE 0 END) AS match_losses,
+                GROUP_CONCAT(DISTINCT pe.game) AS games_played
+            FROM player_entrants pe
+            LEFT JOIN matches m ON pe.entrant_id = m.entrant_id;
+        """, (player_id,))
+
+        stats_row = cur.fetchone()
+        if not stats_row:
+            return None
+
+        player_info = dict(stats_row)
+        # Convert games_played to a list
+        player_info["games_played"] = stats_row["games_played"].split(",") if stats_row["games_played"] else []
+        player_info["teams"] = []
+
+        # Team history
+        cur.execute("""
+            WITH player_entrants AS (
+                SELECT ee.id AS entrant_id,
+                       ee.tournament_id,
+                       ee.placement,
+                       ee.name AS team_name,
+                       ev.name AS event_name,
+                       ev.start_date,
+                       ev.id AS tournament_id,
+                       ev.game AS game,
+                       p.tag
+                FROM Player p
+                JOIN PlayerEntrant pe ON p.id = pe.player_id
+                JOIN EventEntrant ee ON pe.entrant_id = ee.id
+                JOIN Event ev ON ee.tournament_id = ev.id
+                WHERE p.id = ?
+            ),
+            roster AS (
+                SELECT pe.entrant_id,
+                       GROUP_CONCAT(p.id || ':' || p.tag, ',') AS roster
+                FROM PlayerEntrant pe
+                JOIN Player p ON pe.player_id = p.id
+                GROUP BY pe.entrant_id
+            ),
+            tournament_counts AS (
+                SELECT tournament_id, COUNT(*) AS total_entrants
+                FROM EventEntrant
+                GROUP BY tournament_id
+            )
+            SELECT 
+                ee.id AS team_id,
+                ee.name AS team_name,
+                ee.placement AS team_placement,
+                pe.event_name,
+                pe.start_date,
+                pe.tournament_id,
+                pe.game,
+                r.roster AS team_roster,
+                tc.total_entrants
+            FROM player_entrants pe
+            LEFT JOIN EventEntrant ee ON pe.entrant_id = ee.id
+            LEFT JOIN roster r ON r.entrant_id = ee.id
+            LEFT JOIN tournament_counts tc ON tc.tournament_id = pe.tournament_id
+            GROUP BY ee.id
+            ORDER BY pe.start_date DESC;
+        """, (player_id,))
+
+        team_rows = cur.fetchall()
+        for row in team_rows:
+            if row["team_id"] is not None:
+                roster_list = []
+                if row["team_roster"]:
+                    for entry in row["team_roster"].split(","):
+                        pid, tag = entry.split(":", 1)
+                        roster_list.append({"id": int(pid), "tag": tag})
+
+                player_info["teams"].append({
+                    "name": row["team_name"],
+                    "placement": row["team_placement"],
+                    "event_name": row["event_name"],
+                    "tournament_id": row["tournament_id"],
+                    "start_date": row["start_date"],
+                    "total_entrants": row["total_entrants"],
+                    "game": row["game"],
+                    "roster": roster_list
+                })
+
+        return player_info
 
     def get_player_info_from_discord_id(self, discord_id: int):
         cur = self.get_conn().cursor()
@@ -330,9 +461,9 @@ class Database:
                 e.startgg_slug,
                 e.location,
                 ee.id AS team_id,
-                ee.name AS team_name,
+                ee.name AS name,
                 ee.placement AS team_placement,
-                GROUP_CONCAT(p.tag, ', ') AS roster
+                GROUP_CONCAT(p.id || ':' || p.tag, ',') AS roster
             FROM Event e
             LEFT JOIN EventEntrant ee ON ee.tournament_id = e.id
             LEFT JOIN PlayerEntrant pe ON pe.entrant_id = ee.id
@@ -343,7 +474,6 @@ class Database:
         """, (event_id,))
 
         rows = cur.fetchall()
-
         if not rows:
             return None
 
@@ -354,19 +484,28 @@ class Database:
             "start_date": rows[0]["start_date"],
             "end_date": rows[0]["end_date"],
             "game": rows[0]["game"],
+            "startgg_slug": rows[0]["startgg_slug"],
             "location": rows[0]["location"],
             "teams": []
         }
 
         for row in rows:
+            # Parse the roster into a list of dicts {id, tag}
+            roster_list = []
+            if row["roster"]:
+                for entry in row["roster"].split(","):
+                    pid, tag = entry.split(":", 1)
+                    roster_list.append({"id": int(pid), "tag": tag})
+
             event_info["teams"].append({
                 "team_id": row["team_id"],
-                "team_name": row["team_name"],
+                "name": row["name"],
                 "placement": row["team_placement"],
-                "roster": row["roster"].split(", ") if row["roster"] else []
+                "roster": roster_list
             })
 
         return event_info
+
 
 
 

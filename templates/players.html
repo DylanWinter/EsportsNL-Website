@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Esports NL - Players</title>
+  <link rel="icon" href="static/icons/esportsnllogo.png" type="image/icon type">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta name="description" content="Complete player history from Esports NL, the Newfoundland & Labrador esports community." />
+</head>
+<body>
+  {% include 'header.html' %}
+
+  <!-- Player List -->
+  <main>
+    <section id="events">
+      <div class="container">
+        <h1>Players</h1>
+        {% if players %}
+          <ul class="event-list">
+            {% for player in players %}
+              <div class="team-entry">
+                <div class="team-header">
+                  <h3>
+                  <a class="event-link" href="{{ url_for('player', player_id=player.id) }}">
+                    {{ player.tag }}
+                  </a>
+                </h3>
+                </div>
+                  <div class="team-roster">
+                    <p>
+                      Competing since {{player.first_event_date}} <br>
+                      {{ player.total_events_played }} events played
+                    </p>
+                  </div>
+              </div>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p>Failed to find players.</p>
+        {% endif %}
+      </div>
+    </section>
+  </main>
+
+  {% include 'footer.html' %}
+</body>
+</html>
