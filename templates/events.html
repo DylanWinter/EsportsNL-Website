@@ -6,31 +6,10 @@
   <title>Esports NL - Events</title>
   <link rel="icon" href="static/icons/esportsnllogo.png" type="image/icon type">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <meta name="description" content="List of upcoming events from Esports NL, the Newfoundland & Labrador esports community." />
+  <meta name="description" content="Complete event history from Esports NL, the Newfoundland & Labrador esports community." />
 </head>
 <body>
-  <!-- Header / Navigation -->
-  <header>
-    <div class="container nav">
-      <a href="{{ url_for('index') }}" class="brand" aria-label="Esports NL home">
-        <div class="logo" aria-hidden="true">
-          <img src="{{ url_for('static', filename='icons/esportsnllogo.png') }}" alt="ESNL Logo">
-        </div>
-        <span>Esports NL</span>
-      </a>
-
-      <input id="nav-toggle" type="checkbox" aria-label="Toggle navigation" />
-      <label for="nav-toggle" class="hamburger" aria-hidden="true">
-        <span class="bar"></span>
-      </label>
-
-      <nav class="links" aria-label="Primary">
-        <a href="home">About</a>
-        <a href="/events">Past Events</a>
-        <a class="cta" href="https://discord.com/invite/XUeDfkvFgf" aria-label="Join our Discord">Join our Discord <span aria-hidden>→</span></a>
-      </nav>
-    </div>
-  </header>
+  {% include 'header.html' %}
 
   <!-- Events List -->
   <main>
@@ -65,25 +44,6 @@
     </section>
   </main>
 
-  <!-- Footer -->
-  <footer>
-    <div class="container foot">
-      <div>© <span id="year"></span> Esports NL • Built in Newfoundland & Labrador</div>
-      <div class="social" aria-label="Social links" style="display: flex; gap: 20px; align-items: center;">
-        <a href="https://discord.com/invite/XUeDfkvFgf" target="_blank" aria-label="Discord">
-          <img src="{{ url_for('static', filename='icons/discord.svg') }}" alt="Discord" style="height:24px; width:auto;">
-        </a>
-        <a href="https://www.youtube.com/@EsportsNL" target="_blank" aria-label="YouTube">
-          <img src="{{ url_for('static', filename='icons/youtube.svg') }}" alt="YouTube" style="height:24px; width:auto;">
-        </a>
-        <a href="https://www.twitch.tv/esportsnl" target="_blank" aria-label="Twitch">
-          <img src="{{ url_for('static', filename='icons/twitch.svg') }}" alt="Twitch" style="height:24px; width:auto;">
-        </a>
-        <a href="https://instagram.com" target="_blank" aria-label="Instagram">
-          <img src="{{ url_for('static', filename='icons/instagram.svg') }}" alt="Instagram" style="height:24px; width:auto;">
-        </a>
-      </div>
-    </div>
-  </footer>
+  {% include 'footer.html' %}
 </body>
 </html>

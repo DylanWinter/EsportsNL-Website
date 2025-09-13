@@ -18,6 +18,3 @@ services:
       - ./db/data:/EsportsNL-Website/db/data
     restart: unless-stopped
     command: python bot.py
-
-volumes:
-  db:

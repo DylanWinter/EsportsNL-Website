@@ -192,13 +192,12 @@ if __name__ == "__main__":
                 print("Querying tournament data from API:", line)
                 try:
                     event = get_data_from_tournament(startgg_token, line)
+                    try:
+                        db.write_event_data(event)
+                    except Exception as e:
+                        print("Error while writing to database:", e)
                 except Exception as e:
                     print("Error while getting data from API: ", e)
-
-                try:
-                    db.write_event_data(event)
-                except Exception as e:
-                    print("Error while writing to database:", e)
 
                 line = f.readline()
 
@@ -208,10 +207,9 @@ if __name__ == "__main__":
         print("Querying tournament data from API:", slug)
         try:
             event = get_data_from_tournament(startgg_token, slug)
+            try:
+                db.write_event_data(event)
+            except Exception as e:
+                print("Error while writing to database:", e)
         except Exception as e:
             print("Error while getting data from API: ", e, e.with_traceback())
-
-        try:
-            db.write_event_data(event)
-        except Exception as e:
-            print("Error while writing to database:", e)
