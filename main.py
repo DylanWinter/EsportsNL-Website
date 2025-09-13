@@ -89,6 +89,9 @@ def event(event_id):
     if "startgg_slug" in event and event["startgg_slug"] is not None:
         event["startgg_link"] = "https://start.gg/tournament/" + event["startgg_slug"] + "/details"
 
+    for team in event["teams"]:
+        team["placement"] = ordinal(team["placement"])
+
     return render_template("event.html", event=event)
 
 @app.route("/players")
@@ -103,12 +106,9 @@ def player(player_id):
     player = db.get_detailed_player_info(player_id)
     if "startgg_discriminator" in player and player["startgg_discriminator"] is not None:
         player["startgg_link"] = "https://start.gg/user/" + player["startgg_discriminator"]
-        print(player["startgg_link"])
-    print(player["startgg_discriminator"])
     for team in player["teams"]:
         team["placement"] = ordinal(team["placement"])
         team["date_string"] = build_date_string(team["start_date"])
-    print(player)
     return render_template("player.html", player=player)
 
 if __name__ == "__main__":
