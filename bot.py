@@ -133,7 +133,7 @@ async def cancel_veto(interaction: discord.Interaction):
         await interaction.response.send_message("No active veto.")
 
 @bot.tree.command(name="stats", description="Get stats for a player.")
-async def get_stats(interaction: discord.Interaction, user: discord.Member):
+async def get_stats(interaction: discord.Interaction, user: discord.Member = None):
     if user:
         discord_id = user.id
     else:
