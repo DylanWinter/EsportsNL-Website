@@ -1,5 +1,5 @@
 from dotenv import load_dotenv
-from flask import Flask, render_template
+from flask import Flask, render_template, send_from_directory
 import requests
 
 from datetime import datetime, timedelta, timezone
@@ -60,6 +60,10 @@ def fetch_upcoming_discord_events():
 def index():
     events = fetch_upcoming_discord_events()
     return render_template("index.html", events=events)
+
+@app.route("/sitemap.xml")
+def sitemap():
+    return send_from_directory("static", "sitemap.xml")
 
 @app.route("/events")
 @app.route("/past_events")
