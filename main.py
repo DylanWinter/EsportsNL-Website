@@ -65,6 +65,10 @@ def index():
 def sitemap():
     return send_from_directory("static", "sitemap.xml")
 
+@app.route("/favicon.ico")
+def favicon():
+    return send_from_directory("static", "favicon.ico", mimetype="image/vnd.microsoft.icon")
+
 @app.route("/events")
 @app.route("/past_events")
 def past_events():
