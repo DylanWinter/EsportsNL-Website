@@ -201,12 +201,14 @@ async def pick_map(interaction: discord.Interaction, map_name: str):
 async def start_veto(interaction: discord.Interaction, team1: str, team2: str, num_maps: int = 1):
     if num_maps != 1 and num_maps != 3 and num_maps != 5:
         await interaction.response.send_message("Invalid veto. Supply 1, 3 or 5 maps.", ephemeral=True)
+        return
     with open("cfg/bot_config.json", "r") as f:
         data = json.load(f)
     maps = data["maps"]
     veto = get_veto_for_channel(bot.active_vetoes, interaction.channel.id)
     if veto is not None:
         await interaction.response.send_message("There is already an active veto.", ephemeral=True)
+        return
     veto = Veto(int(interaction.channel.id), maps, parse_users(team1), parse_users(team2), num_maps)
     bot.active_vetoes.append(veto)
     mentions_active = " ".join(f"<@{user_id}>" for user_id in veto.active_team)
