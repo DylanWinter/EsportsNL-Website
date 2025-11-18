@@ -22,6 +22,7 @@ description = '''Bot for Esports NL'''
 
 intents = discord.Intents.default()
 intents.message_content = True
+intents.members = True
 bot = commands.Bot(command_prefix='?', description=description, intents=intents)
 # Bot state
 bot.active_vetoes = []
@@ -42,29 +43,12 @@ async def on_ready():
 
 @bot.event
 async def on_message(message):
-    # Handles map veto (messages starting with -)
-    veto = get_veto_for_channel(bot.active_vetoes, message.channel.id)
-    if message.content.startswith("-") and veto is not None:
-        try:
-            map_to_ban = message.content[1:]
-            if veto.can_user_ban(int(message.author.id)):
-                veto.ban(map_to_ban, int(message.author.id))
-
-                if veto.completed:
-                    maps_text = display_list(veto.maps_remaining)
-                    bot.active_vetoes.remove(veto)
-                    await message.channel.send("Banned map " + map_to_ban.capitalize() +
-                                               "\nMap(s) for the match: " + maps_text)
-                else:
-                    mentions = " ".join(f"<@{user_id}>" for user_id in veto.active_team)
-                    await message.channel.send(f"Banned map {map_to_ban.capitalize()}"+
-                                               f"\nTeam banning: {mentions}" +
-                                               f"\nMaps remaining: {display_list(veto.maps_remaining)}")
-        except ValueError as e:
-            await message.channel.send(str(e))
+    pass
 
 @bot.tree.error
 async def on_app_command_error(interaction: discord.Interaction, error):
+    roles = [role.name for role in interaction.user.roles]
+    print(roles, interaction.user.name)
     if isinstance(error, app_commands.MissingAnyRole):
         if interaction.response.is_done():
             await interaction.followup.send("You don’t have the required role to use this command.", ephemeral=True)
@@ -77,7 +61,12 @@ async def on_app_command_error(interaction: discord.Interaction, error):
 async def list_map_pool(interaction: discord.Interaction):
     with open("cfg/bot_config.json", "r") as f:
         data = json.load(f)
-    await interaction.response.send_message("**Current map pool:** " + display_list(data["maps"]))
+    embed = discord.Embed(
+        title="Current Map Pool",
+        description=display_list(data["maps"]),
+        color=discord.Color.blue()
+    )
+    await interaction.response.send_message(embed=embed)
 
 @bot.tree.command(name="mapreplace", description="Replace a map in the pool")
 @app_commands.checks.has_any_role("Admin", "Tournament Organizer")
@@ -96,10 +85,116 @@ async def replace_map(interaction: discord.Interaction, map_to_replace:str, new_
     data["maps"] = maps
     with open("cfg/bot_config.json", "w") as f:
         json.dump(data, f, indent=4)
-
-    await interaction.response.send_message(
-        f"Replaced map `{old_map.capitalize()}` with `{new_map.capitalize()}`.\n**New map pool:** {display_list(maps)}"
+    embed = discord.Embed(
+        title="Map Replacement",
+        color=discord.Color.blue()
     )
+    embed.add_field(
+        name="Replacement",
+        value=f"`{old_map.capitalize()}` → `{new_map.capitalize()}`",
+        inline=False
+    )
+    embed.add_field(
+        name="New Map Pool",
+        value=display_list(maps),
+        inline=False
+    )
+    await interaction.response.send_message(embed=embed)
+
+@bot.tree.command(name="cancelveto", description="Cancels the active veto")
+@app_commands.checks.has_any_role("Admin", "Tournament Organizer")
+async def cancel_veto(interaction: discord.Interaction):
+    veto = get_veto_for_channel(bot.active_vetoes, interaction.channel.id)
+    if veto is not None:
+        bot.active_vetoes.remove(veto)
+        embed = discord.Embed(
+            title="Veto Cancelled",
+            description="Cancelled active veto",
+            color=discord.Color.red()
+        )
+        await interaction.response.send_message(embed=embed)
+    else:
+        await interaction.response.send_message("No active veto.", ephemeral=True)
+
+@bot.tree.command(name="ban", description="Ban a map")
+async def ban_map(interaction: discord.Interaction, map_name: str):
+    veto = get_veto_for_channel(bot.active_vetoes, interaction.channel.id)
+    if veto is not None:
+        try:
+            if veto.can_user_ban(int(interaction.user.id)):
+                veto.ban(map_name, int(interaction.user.id))
+
+                if veto.is_completed():
+                    bot.active_vetoes.remove(veto)
+                    embed = discord.Embed(
+                        title=f"{interaction.user.name} banned **{map_name.capitalize()}**",
+                        color=discord.Color.green()
+                    )
+                    embed.add_field(
+                        name="Map(s) for the Match",
+                        value=display_list(veto.picked_maps),
+                        inline=False
+                    )
+                    await interaction.response.send_message(embed=embed)
+                else:
+                    mentions = " ".join(f"<@{user_id}>" for user_id in veto.active_team)
+                    embed = discord.Embed(
+                        title=f"**{interaction.user.name}** banned **{map_name.capitalize()}**",
+                        color=discord.Color.green()
+                    )
+                    embed.add_field(
+                        name="Team Banning" if veto.is_ban() else "Team Picking",
+                        value=mentions,
+                        inline=False
+                    )
+                    embed.add_field(
+                        name="Maps for the match",
+                        value=display_list(veto.maps_remaining),
+                        inline=False
+                    )
+                    await interaction.response.send_message(embed=embed)
+        except ValueError as e:
+            await interaction.response.send_message(str(e), ephemeral=True)
+
+@bot.tree.command(name="pick", description="Pick a map")
+async def pick_map(interaction: discord.Interaction, map_name: str):
+    veto = get_veto_for_channel(bot.active_vetoes, interaction.channel.id)
+    if veto is not None:
+        try:
+            if veto.can_user_ban(int(interaction.user.id)):
+                veto.pick(map_name, int(interaction.user.id))
+
+                if veto.is_completed():
+                    bot.active_vetoes.remove(veto)
+                    embed = discord.Embed(
+                        title=f"{interaction.user.name} picked **{map_name.capitalize()}**",
+                        color=discord.Color.green()
+                    )
+                    embed.add_field(
+                        name="Map(s) for the Match",
+                        value=display_list(veto.picked_maps),
+                        inline=False
+                    )
+                    await interaction.response.send_message(embed=embed)
+                else:
+                    mentions = " ".join(f"<@{user_id}>" for user_id in veto.active_team)
+                    embed = discord.Embed(
+                        title=f"**{interaction.user.name}** picked **{map_name.capitalize()}**",
+                        color=discord.Color.green()
+                    )
+                    embed.add_field(
+                        name="Team Banning" if veto.is_ban() else "Team Picking",
+                        value=mentions,
+                        inline=False
+                    )
+                    embed.add_field(
+                        name="Maps Remaining",
+                        value=display_list(veto.maps_remaining),
+                        inline=False
+                    )
+                    await interaction.response.send_message(embed=embed)
+        except ValueError as e:
+            await interaction.response.send_message(str(e), ephemeral=True)
 
 @bot.tree.command(name="startveto", description="Starts a veto for the specified number of maps (default 1)")
 @app_commands.checks.has_any_role("Admin", "Tournament Organizer")
@@ -117,20 +212,32 @@ async def start_veto(interaction: discord.Interaction, team1: str, team2: str, n
     mentions_active = " ".join(f"<@{user_id}>" for user_id in veto.active_team)
     mentions_t1 = " ".join(f"<@{user_id}>" for user_id in veto.team1)
     mentions_t2 = " ".join(f"<@{user_id}>" for user_id in veto.team2)
-    await interaction.response.send_message(f"**Starting Veto With:** {display_list(maps)}" +
-                                            f"\nTeams: {mentions_t1} vs. {mentions_t2}" +
-                                            f"\n Team banning: {mentions_active}" +
-                                            "\n Type -<map> to ban a map.")
-
-@bot.tree.command(name="cancelveto", description="Cancels the active veto")
-@app_commands.checks.has_any_role("Admin", "Tournament Organizer")
-async def cancel_veto(interaction: discord.Interaction):
-    veto = get_veto_for_channel(bot.active_vetoes, interaction.channel.id)
-    if veto is not None:
-        bot.active_vetoes.remove(veto)
-        await interaction.response.send_message("Cancelled active veto")
-    else:
-        await interaction.response.send_message("No active veto.")
+    embed = discord.Embed(
+        title="Veto Started",
+        color=discord.Color.green()
+    )
+    embed.add_field(
+        name="Format",
+        value=veto.get_format_string(),
+        inline = False
+    )
+    embed.add_field(
+        name="Map Pool",
+        value=display_list(maps),
+        inline=False
+    )
+    embed.add_field(
+        name="Teams",
+        value=f"{mentions_t1} vs. {mentions_t2}",
+        inline=False
+    )
+    embed.add_field(
+        name= "Team Banning" if veto.is_ban() else "Team Picking",
+        value=mentions_active,
+        inline=False
+    )
+    embed.set_footer(text="Use /ban and /pick to select.")
+    await interaction.response.send_message(embed=embed)
 
 @bot.tree.command(name="stats", description="Get stats for a player.")
 async def get_stats(interaction: discord.Interaction, user: discord.Member = None):
@@ -142,8 +249,12 @@ async def get_stats(interaction: discord.Interaction, user: discord.Member = Non
     player_info = db.get_player_info_from_discord_id(discord_id)
 
     if not player_info:
-        await interaction.response.send_message(f"No stats found for <@{discord_id}>.")
-        return
+        embed = discord.Embed(
+            title="Not Found",
+            description=f"No stats found for <@{discord_id}>.",
+            color=discord.Color.red()
+        )
+        await interaction.response.send_message(embed=embed)
 
     tournaments_played = player_info.get("tournaments_played") or 0
     tournaments_won = player_info.get("tournaments_won") or 0
